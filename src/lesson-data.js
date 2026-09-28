@@ -10,7 +10,7 @@ export const lesson = {
       headline: "A good host doesn't kick everyone out the moment the meal ends.",
       lead: "Some guests stay to help clear the table, the borrowed chairs and dishes go back to the neighbors who lent them, and everyone gets a proper goodbye — not a quiet slip out the back door nobody notices until the house is suddenly empty.",
       heading: "A good host doesn't kick everyone out the moment the meal ends. Some guests stay to help clear the table, the borrowed chairs and dishes go back to the neighbors who lent them, and everyone gets a proper goodbye — not a quiet slip out the back door nobody notices until the house is suddenly empty.",
-      cta: "Reveal the release plan",
+      cta: "Reveal the plan",
       image: "dinner-party-release",
       reveal: {
         title: "Resource release works the same way",
@@ -58,7 +58,7 @@ export const lesson = {
       kicker: "Screen 4 — Adjourning: The Team Ends by Design",
       headline: "The Team Ends by Design",
       heading: "Tuckman's model has five stages, and the exam expects the fifth one — the stage most teams skip entirely.",
-      cta: "Reveal the fifth stage",
+      cta: "Reveal adjourning",
       image: "adjourning-arc",
       reveal: {
         title: "Adjourning: The Team Ends by Design",

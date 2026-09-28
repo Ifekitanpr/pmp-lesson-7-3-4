@@ -4,7 +4,6 @@ import { createRoot } from "react-dom/client";
 import {
   ArrowLeft,
   ArrowRight,
-  BookOpen,
   Check,
   ChevronDown,
   Menu,
@@ -160,7 +159,7 @@ function AccordionScreen({ screen, visited, onVisit, onQuiz }) {
   );
 }
 
-function RevealScreen({ screen, onReveal }) {
+function RevealScreen({ screen, complete, onReveal }) {
   const heading = screen.headline || screen.heading;
   const supportingCopy = screen.lead || (screen.headline && screen.heading !== screen.headline ? screen.heading : null);
 
@@ -170,8 +169,8 @@ function RevealScreen({ screen, onReveal }) {
         <p className="screen-kicker">{kickerFor(screen)}</p>
         <h1>{heading}</h1>
         {supportingCopy && <p className="lead">{supportingCopy}</p>}
-        <button className="primary-cta" type="button" onClick={onReveal}>
-          {screen.cta || "Reveal"} <ArrowRight />
+        <button className="primary-cta" type="button" disabled={complete} onClick={onReveal}>
+          {complete ? "Revealed" : (screen.cta || "Reveal")} <ArrowRight />
         </button>
       </div>
       <img className="lesson-art" src={imageFor(screen.image)} alt="" />
@@ -250,9 +249,13 @@ function App() {
   return (
     <div className="app-shell">
       <header className="topbar">
-        <button className="course-select" type="button"><BookOpen /><span>PMP Project Management Professional</span></button>
-        <div className="module-progress" aria-label={`Course progress ${progress}%`}>
-          <div>{lesson.screens.map((_, index) => <span key={index} className={`progress-dot ${completed[index] ? "done" : index === screenIndex ? "active" : ""}`}>{completed[index] && <Check />}</span>)}</div>
+        <div className="course-select">
+          <span className="crumb">Module 7</span>
+          <span className="crumb-sep">/</span>
+          <span className="crumb-current">Lesson {lesson.number} — {lesson.title}</span>
+        </div>
+        <div className="module-progress" aria-label="Course progress">
+          <div>{Array.from({ length: 10 }, (_, index) => <span key={index} className={`progress-dot ${index < 5 ? "done" : index === 5 ? "active" : ""}`}>{index < 5 ? <Check /> : index === 5 ? <span /> : null}</span>)}</div>
         </div>
         <div className="top-actions">
           <button className="ghost-button" type="button" onClick={() => setSoundOn((value) => !value)}>{soundOn ? <Volume2 /> : <VolumeX />}<span>Sound {soundOn ? "on" : "off"}</span></button>
@@ -279,20 +282,20 @@ function App() {
           </div>
 
           <article className="lesson-card">
-            <div className="lesson-meta">Module 7 / Lesson {lesson.number} — {lesson.title}</div>
             <nav className="section-tabs" aria-label="Lesson sections">
-              {lesson.screens.map((entry, index) => (
-                <button type="button" key={entry.id} className={`${index === screenIndex ? "active" : ""} ${completed[index] ? "done" : ""}`} disabled={index > 0 && !completed[index - 1]} onClick={() => goTo(index)}>
-                  {completed[index] && <Check />}<span>{entry.tab}</span>
-                </button>
-              ))}
+              <p>SECTION {screenIndex + 1} OF {lesson.screens.length}</p>
+              <div>{lesson.screens.map((entry, index) => (
+                  <button type="button" key={entry.id} className={`${index === screenIndex ? "active" : ""} ${completed[index] ? "done" : ""}`} disabled={index > 0 && !completed[index - 1]} onClick={() => goTo(index)}>
+                    {completed[index] && <Check />}<span>{entry.tab}</span>
+                  </button>
+                ))}</div>
             </nav>
 
             <section className="lesson-content">
               {screen.type === "accordion" ? (
                 <AccordionScreen screen={screen} visited={currentVisited} onVisit={visitItem} onQuiz={() => setQuizOpen(true)} />
               ) : (
-                <RevealScreen screen={screen} onReveal={() => setFocus(screen.reveal)} />
+                <RevealScreen screen={screen} complete={completed[screenIndex]} onReveal={() => setFocus(screen.reveal)} />
               )}
             </section>
 
