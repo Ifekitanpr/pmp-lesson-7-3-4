@@ -129,7 +129,7 @@ function CardGridScreen({ screen, visited, onVisit, onQuiz }) {
         </div>
         <img className="grid-page-art" src={imageFor(screen.image)} alt="" />
       </div>
-      <div className={`card-grid ${screen.items.length >= 7 ? "three" : "adaptive"}`}>
+      <div className={`card-grid ${screen.items.length === 4 ? "four" : "three"}`}>
           {screen.items.map((item, index) => {
             const isRead = visited.has(index);
             return (
@@ -154,7 +154,7 @@ function CardGridScreen({ screen, visited, onVisit, onQuiz }) {
       )}
       {active !== null && (
         <FocusModal
-          content={{ ...screen.items[active], image: screen.image }}
+          content={{ ...screen.items[active], image: screen.items[active].image || screen.image }}
           onClose={() => setActive(null)}
           onRead={() => onVisit(active)}
         />
