@@ -5,7 +5,6 @@ import {
   ArrowLeft,
   ArrowRight,
   Check,
-  ChevronDown,
   Menu,
   Target,
   Volume2,
@@ -106,8 +105,8 @@ function KnowledgeCheck({ quiz, onClose, onComplete }) {
   );
 }
 
-function AccordionScreen({ screen, visited, onVisit, onQuiz }) {
-  const [open, setOpen] = useState(null);
+function CardGridScreen({ screen, visited, onVisit, onQuiz }) {
+  const [active, setActive] = useState(null);
   const allRead = visited.size === screen.items.length;
   const heading = screen.headline || screen.heading;
   const supportingCopy = screen.headline
@@ -120,41 +119,46 @@ function AccordionScreen({ screen, visited, onVisit, onQuiz }) {
     : screen.intro;
 
   return (
-    <div className="content-grid accordion-screen">
-      <div className="content-copy">
-        <p className="screen-kicker">{kickerFor(screen)}</p>
-        <h1>{heading}</h1>
-        {supportingCopy && <p className="lead">{supportingCopy}</p>}
-        {instruction && <p className="lead">{instruction}</p>}
-        <div className="accordion">
+    <div className="grid-page">
+      <div className="grid-page-header">
+        <div>
+          <p className="screen-kicker">{kickerFor(screen)}</p>
+          <h1>{heading}</h1>
+          {supportingCopy && <p className="lead">{supportingCopy}</p>}
+          {instruction && <p className="lead">{instruction}</p>}
+        </div>
+        <img className="grid-page-art" src={imageFor(screen.image)} alt="" />
+      </div>
+      <div className={`card-grid ${screen.items.length >= 7 ? "three" : "adaptive"}`}>
           {screen.items.map((item, index) => {
-            const isOpen = open === index;
+            const isRead = visited.has(index);
             return (
-              <article className={`accordion-item ${isOpen ? "open" : ""} ${visited.has(index) ? "read" : ""}`} key={item.title}>
-                <button type="button" onClick={() => { setOpen(isOpen ? null : index); onVisit(index); }}>
-                  <span className="item-number">{String(index + 1).padStart(2, "0")}</span>
-                  <strong>{item.title}</strong>
-                  {visited.has(index) && <Check className="read-check" />}
-                  <ChevronDown className="chevron" />
-                </button>
-                {isOpen && <p>{item.text}</p>}
-              </article>
+              <button className={`click-card ${isRead ? "read" : ""}`} type="button" key={item.title} onClick={() => setActive(index)}>
+                <span className="card-number">{String(index + 1).padStart(2, "0")}</span>
+                <strong>{item.title}</strong>
+                {isRead ? <Check className="card-arrow check" /> : <ArrowRight className="card-arrow" />}
+              </button>
             );
           })}
-        </div>
-        {allRead && screen.after && (
-          <div className="revealed-note">
-            {screen.after.label && <strong>{screen.after.label}</strong>}
-            <p>{screen.after.text}</p>
-          </div>
-        )}
-        {screen.quiz && (
-          <button className="primary-cta" type="button" disabled={!allRead} onClick={onQuiz}>
-            <Target /> {allRead ? "Open knowledge check" : `Explore all ${screen.items.length} items`}
-          </button>
-        )}
       </div>
-      <img className="lesson-art" src={imageFor(screen.image)} alt="" />
+      {allRead && screen.after && (
+        <div className="revealed-note">
+          {screen.after.label && <strong>{screen.after.label}</strong>}
+          <p>{screen.after.text}</p>
+        </div>
+      )}
+      {screen.quiz && (
+        <button className="knowledge-cta" type="button" disabled={!allRead} onClick={onQuiz}>
+          <Target /> {allRead ? "Start knowledge check" : "Explore all items"}
+        </button>
+      )}
+      {active !== null && (
+        <FocusModal
+          content={{ ...screen.items[active], image: screen.image }}
+          onClose={() => setActive(null)}
+          onRead={() => onVisit(active)}
+        />
+      )}
     </div>
   );
 }
@@ -293,7 +297,7 @@ function App() {
 
             <section className="lesson-content">
               {screen.type === "accordion" ? (
-                <AccordionScreen screen={screen} visited={currentVisited} onVisit={visitItem} onQuiz={() => setQuizOpen(true)} />
+                <CardGridScreen screen={screen} visited={currentVisited} onVisit={visitItem} onQuiz={() => setQuizOpen(true)} />
               ) : (
                 <RevealScreen screen={screen} complete={completed[screenIndex]} onReveal={() => setFocus(screen.reveal)} />
               )}
