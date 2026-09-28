@@ -25,6 +25,10 @@ const illustrations = import.meta.glob("./assets/illustrations/*.png", {
 
 const imageFor = (name) => illustrations[`./assets/illustrations/${name}.png`];
 
+const kickerFor = (screen) => screen.id === "hook"
+  ? `Lesson ${lesson.number} · ${lesson.title}`
+  : screen.kicker.replace(/^Screen\s+\d+\s+[—-]\s+/, "");
+
 function FocusModal({ content, onClose, onRead }) {
   useEffect(() => {
     const closeOnEscape = (event) => event.key === "Escape" && onClose();
@@ -39,7 +43,6 @@ function FocusModal({ content, onClose, onRead }) {
           <X />
         </button>
         <img src={imageFor(content.image)} alt="" />
-        <p className="modal-label">CLICK TO REVEAL</p>
         <h3 id="focus-title">{content.title}</h3>
         <p>{content.text}</p>
         {content.bullets && (
@@ -107,13 +110,23 @@ function KnowledgeCheck({ quiz, onClose, onComplete }) {
 function AccordionScreen({ screen, visited, onVisit, onQuiz }) {
   const [open, setOpen] = useState(null);
   const allRead = visited.size === screen.items.length;
+  const heading = screen.headline || screen.heading;
+  const supportingCopy = screen.headline
+    && screen.heading !== screen.headline
+    && !screen.intro?.startsWith(screen.heading)
+    ? screen.heading
+    : null;
+  const instruction = screen.intro?.startsWith(screen.headline)
+    ? screen.intro.slice(screen.headline.length).trim()
+    : screen.intro;
 
   return (
     <div className="content-grid accordion-screen">
       <div className="content-copy">
-        <p className="screen-kicker">{screen.kicker}</p>
-        <h1>{screen.heading}</h1>
-        {screen.intro && <p className="lead">{screen.intro}</p>}
+        <p className="screen-kicker">{kickerFor(screen)}</p>
+        <h1>{heading}</h1>
+        {supportingCopy && <p className="lead">{supportingCopy}</p>}
+        {instruction && <p className="lead">{instruction}</p>}
         <div className="accordion">
           {screen.items.map((item, index) => {
             const isOpen = open === index;
@@ -148,12 +161,15 @@ function AccordionScreen({ screen, visited, onVisit, onQuiz }) {
 }
 
 function RevealScreen({ screen, onReveal }) {
+  const heading = screen.headline || screen.heading;
+  const supportingCopy = screen.lead || (screen.headline && screen.heading !== screen.headline ? screen.heading : null);
+
   return (
     <div className="content-grid">
       <div className="content-copy">
-        <p className="screen-kicker">{screen.kicker}</p>
-        <h1>{screen.heading}</h1>
-        {screen.intro && <p className="lead">{screen.intro}</p>}
+        <p className="screen-kicker">{kickerFor(screen)}</p>
+        <h1>{heading}</h1>
+        {supportingCopy && <p className="lead">{supportingCopy}</p>}
         <button className="primary-cta" type="button" onClick={onReveal}>
           {screen.cta || "Reveal"} <ArrowRight />
         </button>
