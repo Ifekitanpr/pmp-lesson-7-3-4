@@ -1,0 +1,301 @@
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { createRoot } from "react-dom/client";
+import {
+  ArrowLeft,
+  ArrowRight,
+  BookOpen,
+  Check,
+  ChevronDown,
+  Menu,
+  Target,
+  Volume2,
+  VolumeX,
+  X,
+} from "lucide-react";
+import { useLessonAudio } from "../../shared/useLessonAudio";
+import { lesson } from "./lesson-data";
+import "./styles.css";
+
+const illustrations = import.meta.glob("./assets/illustrations/*.png", {
+  eager: true,
+  query: "?url",
+  import: "default",
+});
+
+const imageFor = (name) => illustrations[`./assets/illustrations/${name}.png`];
+
+function FocusModal({ content, onClose, onRead }) {
+  useEffect(() => {
+    const closeOnEscape = (event) => event.key === "Escape" && onClose();
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [onClose]);
+
+  return createPortal(
+    <div className="modal-backdrop" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
+      <section className="focus-modal" role="dialog" aria-modal="true" aria-labelledby="focus-title">
+        <button className="modal-close" type="button" onClick={onClose} aria-label="Close">
+          <X />
+        </button>
+        <img src={imageFor(content.image)} alt="" />
+        <p className="modal-label">CLICK TO REVEAL</p>
+        <h3 id="focus-title">{content.title}</h3>
+        <p>{content.text}</p>
+        {content.bullets && (
+          <ul>
+            {content.bullets.map((bullet) => <li key={bullet}>{bullet}</li>)}
+          </ul>
+        )}
+        <button className="modal-action" type="button" onClick={() => { onRead(); onClose(); }}>
+          Mark as read <Check />
+        </button>
+      </section>
+    </div>,
+    document.body,
+  );
+}
+
+function KnowledgeCheck({ quiz, onClose, onComplete }) {
+  const [picked, setPicked] = useState(null);
+  const correct = picked === quiz.correct;
+
+  useEffect(() => {
+    const closeOnEscape = (event) => event.key === "Escape" && onClose();
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [onClose]);
+
+  return createPortal(
+    <div className="modal-backdrop knowledge-backdrop">
+      <section className="knowledge-modal" role="dialog" aria-modal="true" aria-labelledby="quiz-title">
+        <button className="modal-close" type="button" onClick={onClose} aria-label="Close">
+          <X />
+        </button>
+        <p className="quiz-label"><Target /> MICRO KNOWLEDGE CHECK</p>
+        <h3 id="quiz-title">{quiz.question}</h3>
+        <div className="answers">
+          {quiz.answers.map((answer, index) => (
+            <button
+              type="button"
+              key={answer}
+              className={picked === index ? (correct ? "correct" : "wrong") : ""}
+              onClick={() => setPicked(index)}
+            >
+              <span>{String.fromCharCode(65 + index)}</span>
+              {answer}
+            </button>
+          ))}
+        </div>
+        {picked !== null && (
+          <div className={`feedback ${correct ? "good" : "bad"}`}>
+            <p>{correct ? quiz.correctFeedback : quiz.incorrectFeedback}</p>
+            {!correct && <small>Choose another answer to try again.</small>}
+          </div>
+        )}
+        {correct && (
+          <button className="modal-action" type="button" onClick={() => { onComplete(); onClose(); }}>
+            Finish check <ArrowRight />
+          </button>
+        )}
+      </section>
+    </div>,
+    document.body,
+  );
+}
+
+function AccordionScreen({ screen, visited, onVisit, onQuiz }) {
+  const [open, setOpen] = useState(null);
+  const allRead = visited.size === screen.items.length;
+
+  return (
+    <div className="content-grid accordion-screen">
+      <div className="content-copy">
+        <p className="screen-kicker">{screen.kicker}</p>
+        <h1>{screen.heading}</h1>
+        {screen.intro && <p className="lead">{screen.intro}</p>}
+        <div className="accordion">
+          {screen.items.map((item, index) => {
+            const isOpen = open === index;
+            return (
+              <article className={`accordion-item ${isOpen ? "open" : ""} ${visited.has(index) ? "read" : ""}`} key={item.title}>
+                <button type="button" onClick={() => { setOpen(isOpen ? null : index); onVisit(index); }}>
+                  <span className="item-number">{String(index + 1).padStart(2, "0")}</span>
+                  <strong>{item.title}</strong>
+                  {visited.has(index) && <Check className="read-check" />}
+                  <ChevronDown className="chevron" />
+                </button>
+                {isOpen && <p>{item.text}</p>}
+              </article>
+            );
+          })}
+        </div>
+        {allRead && screen.after && (
+          <div className="revealed-note">
+            {screen.after.label && <strong>{screen.after.label}</strong>}
+            <p>{screen.after.text}</p>
+          </div>
+        )}
+        {screen.quiz && (
+          <button className="primary-cta" type="button" disabled={!allRead} onClick={onQuiz}>
+            <Target /> {allRead ? "Open knowledge check" : `Explore all ${screen.items.length} items`}
+          </button>
+        )}
+      </div>
+      <img className="lesson-art" src={imageFor(screen.image)} alt="" />
+    </div>
+  );
+}
+
+function RevealScreen({ screen, onReveal }) {
+  return (
+    <div className="content-grid">
+      <div className="content-copy">
+        <p className="screen-kicker">{screen.kicker}</p>
+        <h1>{screen.heading}</h1>
+        {screen.intro && <p className="lead">{screen.intro}</p>}
+        <button className="primary-cta" type="button" onClick={onReveal}>
+          {screen.cta || "Reveal"} <ArrowRight />
+        </button>
+      </div>
+      <img className="lesson-art" src={imageFor(screen.image)} alt="" />
+    </div>
+  );
+}
+
+function CompletionModal({ onClose }) {
+  return createPortal(
+    <div className="modal-backdrop">
+      <section className="completion-modal" role="dialog" aria-modal="true" aria-labelledby="complete-title">
+        <div className="completion-icon"><Check /></div>
+        <p>LESSON COMPLETE</p>
+        <h3 id="complete-title">Lesson {lesson.number}</h3>
+        <span>{lesson.title}</span>
+        <button className="modal-action" type="button" onClick={onClose}>Done <Check /></button>
+      </section>
+    </div>,
+    document.body,
+  );
+}
+
+function App() {
+  const [screenIndex, setScreenIndex] = useState(0);
+  const [completed, setCompleted] = useState(() => lesson.screens.map(() => false));
+  const [visited, setVisited] = useState({});
+  const [focus, setFocus] = useState(null);
+  const [quizOpen, setQuizOpen] = useState(false);
+  const [outlineOpen, setOutlineOpen] = useState(false);
+  const [soundOn, setSoundOn] = useState(true);
+  const [lessonComplete, setLessonComplete] = useState(false);
+  const footerRef = useRef(null);
+  const screen = lesson.screens[screenIndex];
+  const currentVisited = useMemo(() => new Set(visited[screen.id] || []), [visited, screen.id]);
+
+  useLessonAudio(soundOn);
+
+  const markComplete = (index = screenIndex) => {
+    setCompleted((state) => state.map((value, itemIndex) => itemIndex === index ? true : value));
+  };
+
+  const visitItem = (itemIndex) => {
+    setVisited((state) => {
+      const next = new Set(state[screen.id] || []);
+      next.add(itemIndex);
+      return { ...state, [screen.id]: [...next] };
+    });
+  };
+
+  useEffect(() => {
+    if (screen.type === "accordion" && !screen.quiz && currentVisited.size === screen.items.length) {
+      markComplete();
+    }
+  }, [currentVisited.size, screen.id]);
+
+  useEffect(() => {
+    if (completed[screenIndex]) footerRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }, [completed, screenIndex]);
+
+  const goTo = (index) => {
+    if (index < 0 || index >= lesson.screens.length) return;
+    if (index > screenIndex && !completed[screenIndex]) return;
+    setScreenIndex(index);
+    setOutlineOpen(false);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const next = () => {
+    if (!completed[screenIndex]) return;
+    if (screenIndex === lesson.screens.length - 1) setLessonComplete(true);
+    else goTo(screenIndex + 1);
+  };
+
+  const progress = Math.round((completed.filter(Boolean).length / lesson.screens.length) * 100);
+
+  return (
+    <div className="app-shell">
+      <header className="topbar">
+        <button className="course-select" type="button"><BookOpen /><span>PMP Project Management Professional</span></button>
+        <div className="module-progress" aria-label={`Course progress ${progress}%`}>
+          <div>{lesson.screens.map((_, index) => <span key={index} className={`progress-dot ${completed[index] ? "done" : index === screenIndex ? "active" : ""}`}>{completed[index] && <Check />}</span>)}</div>
+        </div>
+        <div className="top-actions">
+          <button className="ghost-button" type="button" onClick={() => setSoundOn((value) => !value)}>{soundOn ? <Volume2 /> : <VolumeX />}<span>Sound {soundOn ? "on" : "off"}</span></button>
+          <button className="ghost-button" type="button"><X /><span>Quit</span></button>
+        </div>
+      </header>
+
+      <main className="workspace">
+        <div className="lesson-stage">
+          <div className="outline">
+            <button className="menu-button" type="button" onClick={() => setOutlineOpen((value) => !value)} aria-label="Toggle lesson outline"><Menu /></button>
+            {outlineOpen && (
+              <aside className="outline-panel">
+                <div className="outline-summary"><strong>Lesson {lesson.number}</strong><span>{progress}% explored</span><i><b style={{ width: `${progress}%` }} /></i></div>
+                <div className="lesson-list">
+                  {lesson.screens.map((entry, index) => (
+                    <button type="button" key={entry.id} className={index === screenIndex ? "current" : ""} disabled={index > 0 && !completed[index - 1]} onClick={() => goTo(index)}>
+                      <span>{completed[index] ? <Check /> : index + 1}</span><strong>{entry.tab}</strong>
+                    </button>
+                  ))}
+                </div>
+              </aside>
+            )}
+          </div>
+
+          <article className="lesson-card">
+            <div className="lesson-meta">Module 7 / Lesson {lesson.number} — {lesson.title}</div>
+            <nav className="section-tabs" aria-label="Lesson sections">
+              {lesson.screens.map((entry, index) => (
+                <button type="button" key={entry.id} className={`${index === screenIndex ? "active" : ""} ${completed[index] ? "done" : ""}`} disabled={index > 0 && !completed[index - 1]} onClick={() => goTo(index)}>
+                  {completed[index] && <Check />}<span>{entry.tab}</span>
+                </button>
+              ))}
+            </nav>
+
+            <section className="lesson-content">
+              {screen.type === "accordion" ? (
+                <AccordionScreen screen={screen} visited={currentVisited} onVisit={visitItem} onQuiz={() => setQuizOpen(true)} />
+              ) : (
+                <RevealScreen screen={screen} onReveal={() => setFocus(screen.reveal)} />
+              )}
+            </section>
+
+            {completed[screenIndex] && <div className="interaction-status"><Check /> Section explored. Continue when you’re ready.</div>}
+            <footer className="nav-footer" ref={footerRef}>
+              <button className="secondary-button" type="button" disabled={screenIndex === 0} onClick={() => goTo(screenIndex - 1)}><ArrowLeft /> Previous</button>
+              <button className={`primary-button ${completed[screenIndex] ? "unlocked" : ""}`} type="button" disabled={!completed[screenIndex]} onClick={next}>
+                {screenIndex === lesson.screens.length - 1 ? "Complete lesson" : "Continue"} <ArrowRight />
+              </button>
+            </footer>
+          </article>
+        </div>
+      </main>
+
+      {focus && <FocusModal content={focus} onClose={() => setFocus(null)} onRead={() => { if (screen.quiz) setQuizOpen(true); else markComplete(); }} />}
+      {quizOpen && <KnowledgeCheck quiz={screen.quiz} onClose={() => setQuizOpen(false)} onComplete={() => markComplete()} />}
+      {lessonComplete && <CompletionModal onClose={() => setLessonComplete(false)} />}
+    </div>
+  );
+}
+
+createRoot(document.getElementById("root")).render(<App />);
