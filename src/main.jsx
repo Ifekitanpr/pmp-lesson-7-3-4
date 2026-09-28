@@ -57,8 +57,8 @@ function FocusModal({ content, onClose, onRead }) {
   );
 }
 
-function KnowledgeCheck({ quiz, onClose, onComplete }) {
-  const [picked, setPicked] = useState(null);
+function KnowledgeCheck({ quiz, review = false, onClose, onComplete }) {
+  const [picked, setPicked] = useState(review ? quiz.correct : null);
   const correct = picked === quiz.correct;
 
   useEffect(() => {
@@ -80,6 +80,7 @@ function KnowledgeCheck({ quiz, onClose, onComplete }) {
             <button
               type="button"
               key={answer}
+              disabled={review}
               className={picked === index ? (correct ? "correct" : "wrong") : ""}
               onClick={() => setPicked(index)}
             >
@@ -94,9 +95,14 @@ function KnowledgeCheck({ quiz, onClose, onComplete }) {
             {!correct && <small>Choose another answer to try again.</small>}
           </div>
         )}
-        {correct && (
+        {correct && !review && (
           <button className="modal-action" type="button" onClick={() => { onComplete(); onClose(); }}>
             Finish check <ArrowRight />
+          </button>
+        )}
+        {review && (
+          <button className="modal-action" type="button" onClick={onClose}>
+            Done <Check />
           </button>
         )}
       </section>
@@ -105,7 +111,7 @@ function KnowledgeCheck({ quiz, onClose, onComplete }) {
   );
 }
 
-function CardGridScreen({ screen, visited, onVisit, onQuiz }) {
+function CardGridScreen({ screen, visited, complete, onVisit, onQuiz }) {
   const [active, setActive] = useState(null);
   const allRead = visited.size === screen.items.length;
   const heading = screen.headline || screen.heading;
@@ -148,9 +154,24 @@ function CardGridScreen({ screen, visited, onVisit, onQuiz }) {
         </div>
       )}
       {screen.quiz && (
-        <button className="knowledge-cta" type="button" disabled={!allRead} onClick={onQuiz}>
-          <Target /> {allRead ? "Start knowledge check" : "Explore all items"}
-        </button>
+        <div className={`knowledge-actions ${complete ? "completed" : ""}`}>
+          {complete ? (
+            <>
+              <div className="knowledge-complete">
+                <span><Check /></span>
+                <div><strong>Knowledge check completed</strong><small>You can review your answer or try again.</small></div>
+              </div>
+              <div className="knowledge-action-buttons">
+                <button className="knowledge-cta" type="button" onClick={() => onQuiz("review")}><Target /> Review answers</button>
+                <button className="knowledge-retake" type="button" onClick={() => onQuiz("attempt")}>Retake</button>
+              </div>
+            </>
+          ) : (
+            <button className="knowledge-cta" type="button" disabled={!allRead} onClick={() => onQuiz("attempt")}>
+              <Target /> {allRead ? "Start knowledge check" : "Explore all items"}
+            </button>
+          )}
+        </div>
       )}
       {active !== null && (
         <FocusModal
@@ -297,7 +318,7 @@ function App() {
 
             <section className="lesson-content">
               {screen.type === "accordion" ? (
-                <CardGridScreen screen={screen} visited={currentVisited} onVisit={visitItem} onQuiz={() => setQuizOpen(true)} />
+                <CardGridScreen screen={screen} visited={currentVisited} complete={completed[screenIndex]} onVisit={visitItem} onQuiz={setQuizOpen} />
               ) : (
                 <RevealScreen screen={screen} complete={completed[screenIndex]} onReveal={() => setFocus(screen.reveal)} />
               )}
@@ -314,8 +335,8 @@ function App() {
         </div>
       </main>
 
-      {focus && <FocusModal content={focus} onClose={() => setFocus(null)} onRead={() => { if (screen.quiz) setQuizOpen(true); else markComplete(); }} />}
-      {quizOpen && <KnowledgeCheck quiz={screen.quiz} onClose={() => setQuizOpen(false)} onComplete={() => markComplete()} />}
+      {focus && <FocusModal content={focus} onClose={() => setFocus(null)} onRead={() => { if (screen.quiz) setQuizOpen("attempt"); else markComplete(); }} />}
+      {quizOpen && <KnowledgeCheck quiz={screen.quiz} review={quizOpen === "review"} onClose={() => setQuizOpen(false)} onComplete={() => markComplete()} />}
       {lessonComplete && <CompletionModal onClose={() => setLessonComplete(false)} />}
     </div>
   );
