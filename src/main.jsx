@@ -135,7 +135,7 @@ function CardGridScreen({ screen, visited, complete, onVisit, onQuiz }) {
         </div>
         <img className="grid-page-art" src={imageFor(screen.image)} alt="" />
       </div>
-      <div className={`card-grid ${screen.items.length === 4 ? "four" : "three"}`}>
+      <div className={`card-grid ${screen.items.length === 4 ? "two-by-two" : "three"}`}>
           {screen.items.map((item, index) => {
             const isRead = visited.has(index);
             return (

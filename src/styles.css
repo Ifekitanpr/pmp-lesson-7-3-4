@@ -296,7 +296,7 @@ button:focus-visible {
 .card-grid.three {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
-.card-grid.four {
+.card-grid.two-by-two {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 .click-card {
@@ -821,7 +821,7 @@ button:focus-visible {
     order: -1;
   }
   .card-grid.three,
-  .card-grid.four {
+  .card-grid.two-by-two {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .lesson-art {
@@ -892,7 +892,7 @@ button:focus-visible {
     width: 100%;
   }
   .card-grid.three,
-  .card-grid.four {
+  .card-grid.two-by-two {
     grid-template-columns: 1fr;
   }
   .click-card {
